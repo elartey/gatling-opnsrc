@@ -15,11 +15,12 @@ var client *http.Client
 var successful_count int
 var total_push int
 
-func gatlingXML(url string, xml string, cheads []string, ch chan<- bool, rtype string) {
+func gatlingXML(url string, xml string, xHeaders string, ch chan<- bool, rtype string) {
 
 	count := 0
 	out := []byte(xml)
 
+	cheads := strings.Fields(xHeaders)
 	for {
 		request, _ := http.NewRequest(rtype, url, bytes.NewBuffer(out))
 		for _, v := range cheads {
@@ -48,15 +49,17 @@ func gatlingXML(url string, xml string, cheads []string, ch chan<- bool, rtype s
 
 }
 
-func gatlingJSON(url string, jsonObject string, custHeaders []string, ch chan<- bool, rtype string) {
+func gatlingJSON(url string, jsonObject string, jHeaders string, ch chan<- bool, rtype string) {
 
 	count := 0
 	out := []byte(jsonObject)
 
+	custHeaders := strings.Fields(jHeaders)
+
 	for {
 		request, _ := http.NewRequest(rtype, url, bytes.NewBuffer(out))
-		for _, headerVal := range custHeaders {
-			s := strings.Split(headerVal, ":")
+		for _, h := range custHeaders {
+			s := strings.Split(h, ":")
 			request.Header.Set(s[0], s[1])
 		}
 		request.Header.Set("Content-Type", "application/json")
@@ -85,14 +88,14 @@ func main() {
 	nCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(nCPU)
 
-	urlString := flag.String("url", "", "Url to stress test")
+	urlString := flag.String("url", "", "Url to stress test e.g. 'http://acme.com'")
 	requestInt := flag.Int("rps", 0, "Number of requests to make simultaneously")
-	requestObject := flag.String("object", "", "Custom object to post")
+	requestObject := flag.String("object", "", "Custom object to post e.g. {'foo':'bar'}")
 	//requestToken := flag.String("token", "", "Token to authorize requests")
-	objType := flag.String("objectType", "", "Type of object to post")
+	objType := flag.String("objectType", "", "Type of object to post. e.g. 'xml' or 'json'")
 	numRequests := flag.Int("numR", 0, "Total number of requests to make")
 	reqType := flag.String("type", "", "HTTP request type you'd like to make. Currently supported type(s) 'POST'")
-	heads := flag.Args()
+	heads := flag.String("headers", "", "HTTP headers to include when making request. Format should be for example 'Auth:SomeToken X-Header:Sugar'. \nHeaders should be separated by spaces")
 	flag.Parse()
 
 	// Customizing Transport to have larger connection pool
@@ -109,33 +112,37 @@ func main() {
 	client = &http.Client{Transport: &defaultTransport}
 
 	start := time.Now()
-	if *objType == "json" {
-		ch := make(chan bool)
-		for i := 0; i < *requestInt; i++ {
-			go gatlingJSON(*urlString, *requestObject, heads, ch, *reqType)
+	if *objType == "" {
+		flag.PrintDefaults()
+	} else {
+
+		if *objType == "json" {
+			ch := make(chan bool)
+			for i := 0; i < *requestInt; i++ {
+				go gatlingJSON(*urlString, *requestObject, *heads, ch, *reqType)
+			}
+
+			for r := 0; r < *numRequests; r++ {
+				<-ch
+			}
 		}
 
-		for r := 0; r < *numRequests; r++ {
-			<-ch
+		if *objType == "xml" {
+			ch := make(chan bool)
+			for i := 0; i < *requestInt; i++ {
+				go gatlingXML(*urlString, *requestObject, *heads, ch, *reqType)
+			}
+
+			for c := 0; c < *numRequests; c++ {
+				<-ch
+			}
 		}
+		elapsedTime := time.Since(start)
+		var failed_count int
+		failed_count = total_push - successful_count
+		log.Printf("[*] Total number of successful requests: %v", successful_count)
+		log.Printf("[*] Total number of failed requests: %v", failed_count)
+		log.Printf("[*] Total number of requests: %v", total_push)
+		log.Printf("[*] Total time elapsed: %v", elapsedTime)
 	}
-
-	if *objType == "xml" {
-		ch := make(chan bool)
-		for i := 0; i < *requestInt; i++ {
-			go gatlingXML(*urlString, *requestObject, heads, ch, *reqType)
-		}
-
-		for c := 0; c < *numRequests; c++ {
-			<-ch
-		}
-	}
-
-	elapsedTime := time.Since(start)
-	var failed_count int
-	failed_count = total_push - successful_count
-	log.Printf("[*] Total number of successful requests: %v", successful_count)
-	log.Printf("[*] Total number of failed requests: %v", failed_count)
-	log.Printf("[*] Total number of requests: %v", total_push)
-	log.Printf("[*] Total time elapsed: %v", elapsedTime)
 }

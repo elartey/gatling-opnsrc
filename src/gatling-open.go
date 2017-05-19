@@ -91,8 +91,7 @@ func main() {
 		}
 
 		elapsedTime := time.Since(start)
-		var failed_count int
-		failed_count = total_push - successful_count
+		failed_count := total_push - successful_count
 		log.Printf("[*] Total number of successful requests: %v", successful_count)
 		log.Printf("[*] Total number of failed requests: %v", failed_count)
 		log.Printf("[*] Total number of requests: %v", total_push)

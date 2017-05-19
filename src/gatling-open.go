@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -29,7 +30,8 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 		}
 		response, yoo := client.Do(request)
 		if yoo != nil {
-			log.Printf("[*] Error making request.")
+			log.Fatalf("[*] Error making request.", yoo)
+			os.Exit(1)
 		}
 		defer response.Body.Close()
 

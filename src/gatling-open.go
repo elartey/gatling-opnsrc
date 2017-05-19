@@ -15,10 +15,10 @@ var client *http.Client
 var successful_count int
 var total_push int
 
-func gatlingXML(url string, xml string, xHeaders string, ch chan<- bool, rtype string) {
+func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype string) {
 
 	count := 0
-	out := []byte(xml)
+	out := []byte(object)
 
 	cheads := strings.Fields(xHeaders)
 	for {
@@ -27,7 +27,6 @@ func gatlingXML(url string, xml string, xHeaders string, ch chan<- bool, rtype s
 			hs := strings.Split(v, ":")
 			request.Header.Set(hs[0], hs[1])
 		}
-		request.Header.Set("Content-Type", "text/xml; charset=utf-8")
 		response, yoo := client.Do(request)
 		if yoo != nil {
 			log.Printf("[*] Error making request.")
@@ -40,41 +39,7 @@ func gatlingXML(url string, xml string, xHeaders string, ch chan<- bool, rtype s
 
 		count += 1
 
-		if response.StatusCode == 200 {
-			successful_count += 1
-			ch <- true
-		}
-
-	}
-
-}
-
-func gatlingJSON(url string, jsonObject string, jHeaders string, ch chan<- bool, rtype string) {
-
-	count := 0
-	out := []byte(jsonObject)
-
-	custHeaders := strings.Fields(jHeaders)
-
-	for {
-		request, _ := http.NewRequest(rtype, url, bytes.NewBuffer(out))
-		for _, h := range custHeaders {
-			s := strings.Split(h, ":")
-			request.Header.Set(s[0], s[1])
-		}
-		request.Header.Set("Content-Type", "application/json")
-		response, yoo := client.Do(request)
-		if yoo != nil {
-			log.Printf("[*] Error making request.")
-		}
-		defer response.Body.Close()
-		log.Printf("[*] Request complete! Finished Request No: #%v, Status: %v", count, response.StatusCode)
-
-		total_push += 1
-
-		count += 1
-
-		if response.StatusCode == 201 {
+		if response.StatusCode == 200 || response.StatusCode == 201 {
 			successful_count += 1
 			ch <- true
 		}
@@ -112,31 +77,19 @@ func main() {
 	client = &http.Client{Transport: &defaultTransport}
 
 	start := time.Now()
-	if *objType == "" {
+	switch *objType {
+	case "":
 		flag.PrintDefaults()
-	} else {
-
-		if *objType == "json" {
-			ch := make(chan bool)
-			for i := 0; i < *requestInt; i++ {
-				go gatlingJSON(*urlString, *requestObject, *heads, ch, *reqType)
-			}
-
-			for r := 0; r < *numRequests; r++ {
-				<-ch
-			}
+	default:
+		ch := make(chan bool)
+		for i := 0; i < *requestInt; i++ {
+			go gatling(*urlString, *requestObject, *heads, ch, *reqType)
 		}
 
-		if *objType == "xml" {
-			ch := make(chan bool)
-			for i := 0; i < *requestInt; i++ {
-				go gatlingXML(*urlString, *requestObject, *heads, ch, *reqType)
-			}
-
-			for c := 0; c < *numRequests; c++ {
-				<-ch
-			}
+		for r := 0; r < *numRequests; r++ {
+			<-ch
 		}
+
 		elapsedTime := time.Since(start)
 		var failed_count int
 		failed_count = total_push - successful_count
@@ -145,4 +98,5 @@ func main() {
 		log.Printf("[*] Total number of requests: %v", total_push)
 		log.Printf("[*] Total time elapsed: %v", elapsedTime)
 	}
+
 }

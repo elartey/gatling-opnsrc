@@ -13,8 +13,7 @@ import (
 )
 
 var client *http.Client
-var successful_count int
-var total_push int
+var successCount, totalPush int
 
 func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype string, otype string) {
 
@@ -34,18 +33,18 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 	}
 	response, yoo := client.Do(request)
 	if yoo != nil {
-		log.Fatalf("[*] Error making request.", yoo)
+		log.Fatalf("[*] Error making request: %s", yoo)
 	}
 	defer response.Body.Close()
 
 	log.Printf("[*] Request complete! Finished Request No: #%v, Status: %v", count, response.StatusCode)
 
-	total_push += 1
+	totalPush++
 
-	count += 1
+	count++
 
 	if response.StatusCode == 200 || response.StatusCode == 201 {
-		successful_count += 1
+		successCount++
 		ch <- true
 	}
 }
@@ -92,10 +91,10 @@ func main() {
 		}
 
 		elapsedTime := time.Since(start)
-		failed_count := total_push - successful_count
-		log.Printf("[*] Total number of successful requests: %v", successful_count)
-		log.Printf("[*] Total number of failed requests: %v", failed_count)
-		log.Printf("[*] Total number of requests: %v", total_push)
+		failedCount := totalPush - successCount
+		log.Printf("[*] Total number of successful requests: %v", successCount)
+		log.Printf("[*] Total number of failed requests: %v", failedCount)
+		log.Printf("[*] Total number of requests: %v", totalPush)
 		log.Printf("[*] Total time elapsed: %v", elapsedTime)
 	}
 

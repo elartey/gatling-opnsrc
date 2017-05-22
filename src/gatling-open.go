@@ -27,10 +27,13 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 	} else {
 		request.Header.Set("Content-Type", "application/"+otype)
 	}
-	for _, v := range cheads {
-		hs := strings.Split(v, ":")
-		request.Header.Set(hs[0], hs[1])
+	if len(cheads) > 0 {
+		for _, v := range cheads {
+			hs := strings.Split(v, ":")
+			request.Header.Set(hs[0], hs[1])
+		}
 	}
+
 	response, yoo := client.Do(request)
 	if yoo != nil {
 		log.Fatalf("[*] Error making request: %s", yoo)

@@ -21,35 +21,40 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 	out := []byte(object)
 	cheads := strings.Fields(xHeaders)
 	for {
-		request, _ := http.NewRequest(rtype, url, bytes.NewBuffer(out))
-		if strings.ToLower(otype) != "xml" || strings.ToLower(otype) != "json" {
-			log.Printf("[*] Invalid content type. Please specify json or xml")
-			os.Exit(1)
-		} else {
-			request.Header.Set("Content-Type", "application/"+otype)
-		}
-		if len(cheads) > 0 {
-			for _, v := range cheads {
-				hs := strings.Split(v, ":")
-				request.Header.Set(hs[0], hs[1])
+		if strings.ToUpper(rtype) == "POST" {
+			request, _ := http.NewRequest("POST", url, bytes.NewBuffer(out))
+			switch otype {
+			case "xml":
+				request.Header.Set("Content-Type", "text/xml")
+			case "json":
+				request.Header.Set("Content-Type", "application/json")
+			default:
+				log.Printf("[*] Invalid content type. Please specify json or xml")
+				os.Exit(1)
 			}
-		}
+			if len(cheads) > 0 {
+				for _, v := range cheads {
+					hs := strings.Split(v, ":")
+					request.Header.Set(hs[0], hs[1])
+				}
+			}
 
-		response, yoo := client.Do(request)
-		if yoo != nil {
-			log.Fatalf("[*] Error making request: %s", yoo)
-		}
-		defer response.Body.Close()
+			response, yoo := client.Do(request)
+			if yoo != nil {
+				log.Fatalf("[*] Error making request: %s", yoo)
+			}
+			defer response.Body.Close()
 
-		log.Printf("[*] Request complete! Finished Request No: #%v, Status: %v", count, response.StatusCode)
+			log.Printf("[*] Request complete! Finished Request No: #%v, Status: %v", count, response.StatusCode)
 
-		totalPush++
+			totalPush++
 
-		count++
+			count++
 
-		if response.StatusCode == 200 || response.StatusCode == 201 {
-			successCount++
-			ch <- true
+			if response.StatusCode == 200 || response.StatusCode == 201 {
+				successCount++
+				ch <- true
+			}
 		}
 	}
 }

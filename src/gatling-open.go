@@ -22,7 +22,7 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 	cheads := strings.Fields(xHeaders)
 	for {
 		if strings.ToUpper(rtype) == "POST" {
-			request, _ := http.NewRequest("POST", url, bytes.NewBuffer(out))
+			request, _ := http.NewRequest(strings.ToUpper(rtype), url, bytes.NewBuffer(out))
 			switch otype {
 			case "xml":
 				request.Header.Set("Content-Type", "text/xml")

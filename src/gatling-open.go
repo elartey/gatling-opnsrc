@@ -38,7 +38,6 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 					request.Header.Set(hs[0], hs[1])
 				}
 			}
-
 			response, yoo := client.Do(request)
 			if yoo != nil {
 				log.Fatalf("[*] Error making request: %s", yoo)
@@ -48,15 +47,15 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 			log.Printf("[*] Request complete! Finished Request No: #%v, Status: %v", count, response.StatusCode)
 
 			totalPush++
-
 			count++
 
 			if response.StatusCode == 200 || response.StatusCode == 201 {
 				successCount++
-				ch <- true
 			}
+			ch <- true
 		}
 	}
+
 }
 
 func main() {

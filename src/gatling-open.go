@@ -20,8 +20,11 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 	count := 0
 	out := []byte(object)
 	cheads := strings.Fields(xHeaders)
+
 	for {
-		if strings.ToUpper(rtype) == "POST" {
+
+		switch strings.ToUpper(rtype) {
+		case "POST":
 			request, _ := http.NewRequest(strings.ToUpper(rtype), url, bytes.NewBuffer(out))
 			switch otype {
 			case "xml":
@@ -38,9 +41,9 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 					request.Header.Set(hs[0], hs[1])
 				}
 			}
-			response, yoo := client.Do(request)
-			if yoo != nil {
-				log.Fatalf("[*] Error making request: %s", yoo)
+			response, err := client.Do(request)
+			if err != nil {
+				log.Fatalf("[*] Error making POST request: %s", err)
 			}
 			defer response.Body.Close()
 
@@ -53,7 +56,27 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 				successCount++
 			}
 			ch <- true
+
+		case "GET":
+			request, _ := http.NewRequest(strings.ToUpper(rtype), url, nil)
+			response, err := client.Do(request)
+			if err != nil {
+				log.Fatalf("[*] Error making GET request: %s", err)
+			}
+			defer response.Body.Close()
+			log.Printf("[*] Request complete! Finished Request No: #%v, Status: %v", count, response.StatusCode)
+			totalPush++
+			count++
+
+			if response.StatusCode == 200 || response.StatusCode == 201 {
+				successCount++
+			}
+			ch <- true
+
+		default:
+			log.Printf("[*] Bad HTTP method specified. Please specify either 'GET' or 'POST' as 'rtype'")
 		}
+
 	}
 
 }
@@ -63,13 +86,13 @@ func main() {
 	nCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(nCPU)
 
-	urlString := flag.String("url", "", "Url to stress test e.g. 'http://acme.com'")
-	requestInt := flag.Int("rps", 0, "Number of requests to make simultaneously")
-	requestObject := flag.String("object", "", "Custom object to post e.g. {'foo':'bar'}")
-	objType := flag.String("objectType", "", "Type of object to post. e.g. 'xml' or 'json'")
-	numRequests := flag.Int("numR", 0, "Total number of requests to make")
-	reqType := flag.String("type", "", "HTTP request type you'd like to make. Currently supported type(s) 'POST'")
-	heads := flag.String("headers", "", "HTTP headers to include when making request. Format should be for example 'Auth:SomeToken X-Header:Sugar'. \nHeaders should be separated by spaces")
+	urlString := flag.String("url", "", "Url to stress test e.g. 'http://acme.com'.")
+	requestInt := flag.Int("rps", 0, "Number of requests to make simultaneously.")
+	requestObject := flag.String("object", "", "Custom object to post e.g. {'foo':'bar'}.")
+	objType := flag.String("objectType", "", "Type of object to post. e.g. 'xml' or 'json'.")
+	numRequests := flag.Int("numR", 0, "Total number of requests to make.")
+	reqType := flag.String("type", "", "HTTP request type you'd like to make. Either 'GET' or 'POST'.")
+	heads := flag.String("headers", "", "Set HTTP headers. Format should be for example 'Auth:SomeToken X-Header:Sugar'. \nHeaders should be separated by spaces.")
 	flag.Parse()
 
 	// Customizing Transport to have larger connection pool
@@ -86,7 +109,7 @@ func main() {
 	client = &http.Client{Transport: &defaultTransport}
 
 	start := time.Now()
-	switch *objType {
+	switch *urlString {
 	case "":
 		flag.PrintDefaults()
 	default:

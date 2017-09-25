@@ -59,6 +59,12 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 
 		case "GET":
 			request, _ := http.NewRequest(strings.ToUpper(rtype), url, nil)
+			if len(cheads) > 0 {
+				for _, v := range cheads {
+					hs := strings.Split(v, ":")
+					request.Header.Set(hs[0], hs[1])
+				}
+			}
 			response, err := client.Do(request)
 			if err != nil {
 				log.Fatalf("[*] Error making GET request: %s", err)

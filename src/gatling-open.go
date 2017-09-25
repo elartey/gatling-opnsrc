@@ -98,7 +98,7 @@ func main() {
 	objType := flag.String("objectType", "", "Type of object to post. e.g. 'xml' or 'json'.")
 	numRequests := flag.Int("numR", 0, "Total number of requests to make.")
 	reqType := flag.String("type", "", "HTTP request type you'd like to make. Either 'GET' or 'POST'.")
-	heads := flag.String("headers", "", "Set HTTP headers. Format should be for example 'Auth:SomeToken X-Header:Sugar'. \nHeaders should be separated by spaces.")
+	heads := flag.String("headers", "", "Set HTTP headers. Format should be for example 'Auth:SomeToken,X-Header:Sugar'. \nHeaders should be separated by commas.")
 	flag.Parse()
 
 	// Customizing Transport to have larger connection pool

@@ -19,7 +19,7 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 
 	count := 0
 	out := []byte(object)
-	cheads := strings.Fields(xHeaders)
+	cheads := strings.Split(xHeaders, ",")
 
 	for {
 
@@ -65,6 +65,7 @@ func gatling(url string, object string, xHeaders string, ch chan<- bool, rtype s
 					request.Header.Set(hs[0], hs[1])
 				}
 			}
+			log.Printf("[*] headers: %s", request.Header)
 			response, err := client.Do(request)
 			if err != nil {
 				log.Fatalf("[*] Error making GET request: %s", err)

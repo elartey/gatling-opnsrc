@@ -92,12 +92,12 @@ func main() {
 	nCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(nCPU)
 
-	urlString := flag.String("url", "", "Url to stress test e.g. 'http://acme.com'.")
-	requestInt := flag.Int("rps", 0, "Number of requests to make simultaneously.")
-	requestObject := flag.String("object", "", "Custom object to post e.g. {'foo':'bar'}.")
-	objType := flag.String("objectType", "", "Type of object to post. e.g. 'xml' or 'json'.")
-	numRequests := flag.Int("numR", 0, "Total number of requests to make.")
-	reqType := flag.String("type", "", "HTTP request type you'd like to make. Either 'GET' or 'POST'.")
+	url := flag.String("url", "", "Url to stress test e.g. 'http://acme.com'.")
+	request := flag.Int("rps", 0, "Number of requests to make simultaneously.")
+	data := flag.String("data", "", "Custom object to post e.g. {'foo':'bar'}.")
+	dataType := flag.String("data-type", "", "Type of object to post. e.g. 'xml' or 'json'.")
+	numRequests := flag.Int("total-requests", 0, "Total number of requests to make.")
+	requestType := flag.String("type", "", "HTTP request type you'd like to make. Either 'GET' or 'POST'.")
 	heads := flag.String("headers", "", "Set HTTP headers. Format should be for example 'Auth:SomeToken,X-Header:Sugar'. Headers should be separated by commas.")
 	flag.Parse()
 
@@ -120,13 +120,13 @@ func main() {
 	client = &http.Client{Transport: &defaultTransport}
 
 	start := time.Now()
-	switch *urlString {
+	switch *url {
 	case "":
 		flag.Usage()
 	default:
 		ch := make(chan bool)
-		for i := 0; i < *requestInt; i++ {
-			go gatling(*urlString, *requestObject, *heads, ch, *reqType, *objType)
+		for i := 0; i < *request; i++ {
+			go gatling(*url, *data, *heads, ch, *requestType, *dataType)
 		}
 
 		for r := 0; r < *numRequests; r++ {

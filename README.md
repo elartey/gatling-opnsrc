@@ -7,7 +7,7 @@ Usage
 - ./gatling-linux_64 --type='POST' --url 'http://acme.com' --rps 2 --data-type 'xml' --data '<xmlObject>Some data in here</xmlObject>' --total-requests 10 --headers 'Auth:SomeValue,X-Header:Foobar'
 
 
-- ./gatling-linux_64 --type='GET' --url 'http://acme.com' --rps 2 --total-requests 10 -headers 'Auth:SomeValue,X-Header:Foobar'
+- ./gatling-linux_64 --type='GET' --url 'http://acme.com' --rps 2 --total-requests 10 --headers 'Auth:SomeValue,X-Header:Foobar'
 
 
 Options
